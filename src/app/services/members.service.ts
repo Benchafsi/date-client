@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject, model, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { of } from 'rxjs';
 import { environment } from '../environment/environment';
 import { Member } from '../models/member';
@@ -19,7 +19,8 @@ export class MembersService {
   paginatedResult = signal<PaginatedResult<Member[]> | null>(null);
   memberCache = new Map();
   user = this.accountService.currentUser();
-  userParams = model<UserParams>(new UserParams(this.user));
+  //userParams = model<UserParams>(new UserParams(this.user));
+  userParams = signal<UserParams>(new UserParams(this.user));
 
   resetUserParams() {
     this.userParams.set(new UserParams(this.user));
