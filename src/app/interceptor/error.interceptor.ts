@@ -2,7 +2,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { NavigationExtras, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
-import { catchError } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
@@ -13,20 +13,20 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       if (error) {
         switch (error.status) {
           case 400:
-            if (error.error.errors) {
-              const modalStateErrors = [];
-              for (const key in error.error.errors) {
-                if (error.error.errors[key]) {
-                  modalStateErrors.push(error.error.errors[key]);
-                }
-              }
-              throw modalStateErrors.flat();
+            if (error.error?.errors) {
+              // Safely extract validation errors as string[]
+              const modalStateErrors: string[] = Object.values(
+                error.error.errors
+              ).flat() as string[];
+              throw modalStateErrors;
+            } else if (typeof error.error === 'string') {
+              toastr.error(error.error, error.status.toString());
             } else {
-              toastr.error(error.error, error.status);
+              toastr.error('Bad Request', error.status.toString());
             }
             break;
           case 401:
-            toastr.error('Unauthorised', error.status);
+            toastr.error('Unauthorized', error.status.toString());
             break;
           case 404:
             router.navigateByUrl('/not-found');
@@ -38,11 +38,16 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             router.navigateByUrl('/server-error', navigationExtras);
             break;
           default:
-            toastr.error('Something unexpected went wrong');
+            toastr.error(
+              'Something unexpected went wrong',
+              error.status.toString()
+            );
+            console.error('Unexpected error:', error);
             break;
         }
       }
-      throw error;
+
+      return throwError(() => error); // Re-throw the error
     })
   );
 };

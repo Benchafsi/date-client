@@ -67,9 +67,23 @@ export class RegisterComponent implements OnInit {
   register() {
     const dob = this.getDateOnly(this.registerForm.get('dateOfBirth')?.value);
     this.registerForm.patchValue({ dateOfBirth: dob });
+
     this.accountService.register(this.registerForm.value).subscribe({
       next: (_) => this.router.navigateByUrl('/members'),
-      error: (error) => (this.validationErrors = error),
+      error: (errorResponse) => {
+        console.error('Error during registration:', errorResponse);
+
+        // Extract error descriptions from the API response
+        if (errorResponse.error && Array.isArray(errorResponse.error)) {
+          this.validationErrors = errorResponse.error.map(
+            (err: any) => err.description
+          );
+        } else {
+          this.validationErrors = [
+            'An unexpected error occurred. Please try again.',
+          ];
+        }
+      },
     });
   }
 
